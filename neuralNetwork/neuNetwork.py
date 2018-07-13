@@ -1,9 +1,6 @@
 #coding:utf-8
 import numpy as np
 
-BATCH_SIZE = 4
-TRAIN_STEPS = 150000
-
 DEBUG00 = False
 DEBUG01 = False
 
@@ -19,7 +16,7 @@ class relu( activation ) :
         xx = [ i if i > 0 else -i for i in x ]
         return xx 
 
-class neuNetwork() :
+class neuNetworker() :
     def __init__(self ,  inDim , n_a ) :
         '''inDim =>Dimension of input
            n_a =>list of tuple ( nodes , activation ) of each layer
@@ -43,7 +40,6 @@ class neuNetwork() :
                 b = np.ones( ( dim  ) )
                 b[0] = -4
             if DEBUG01:
-                #print('w type' , type(w)  )
                 print('w',lev , ':\n' , w )
                 print('b',lev , ':\n' , b ) 
             a = i[1]
@@ -127,6 +123,8 @@ class neuNetwork() :
         return e 
 
 ''' Main for  Leaned by myself '''
+BATCH_SIZE = 4
+TRAIN_STEPS = 50000
 def directLearnMain() :
     xa = np.array( [[1,0,0,1],[0,1,0,0] , [0,1,0,1], [0,1,1,1]  ])
     y_a = np.array( [[1.,0.,0.],[0.,1.,0.] , [0.,0.,1.], [0.,1.0,0.]  ])
@@ -134,8 +132,8 @@ def directLearnMain() :
         print( 'xa:\n' , xa )
     act1 = signoid()
     #act1 = relu()
-    wba=[[3,act1]]
-    nn = neuNetwork( 4 , wba )
+    wba=[[4,act1] , [3,act1] ]
+    nn = neuNetworker( 4 , wba )
     ya = nn.forward(xa)
     if DEBUG01:
         print( 'ya type:' , type(ya) , 'ya[0] type' , type( ya[0] ) )
@@ -147,6 +145,6 @@ def directLearnMain() :
     nn.dumpWeightBias()
         
 
-               
-directLearnMain()        
+if __name__ == '__main__':               
+    directLearnMain()        
 

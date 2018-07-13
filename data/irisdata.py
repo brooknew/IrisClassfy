@@ -19,6 +19,25 @@ def getDataFromDatafile(n1, n2):
                 items.append( int( line[-1] ) )
                 dataGroup.append( items )        
         return dataGroup
+def normalizeData( dataGroup ) :
+    itemMax = [-1.,-1.,-1.,-1.]
+    itemMin = [100.,100.,100.,100.]
+    itemScale = [1.,1.,1.,1.]
+    for  data in dataGroup :
+        for  i in range( 4 )  :
+            if itemMax[i] < data[i]  :
+                itemMax[i] = data[i]
+            if itemMin[i] < data[i]  :
+                itemMin[i] = data[i]
+    for  i in range( 4 ) :
+        itemScale[i] = 1. /( itemMax[i] - itemMin[i]) 
+    for  k in range( len(dataGroup) )  :
+        for  i in range( 4 )  :
+            dataGroup[k][i] -=  itemMin[i]
+            dataGroup[k][i] *=  itemScale[i]
+    #print( dataGroup )
+    return dataGroup
+
          
 def saveTest( record ) :
     ''' record format:
