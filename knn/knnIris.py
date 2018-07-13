@@ -1,12 +1,15 @@
 '''KNN classifaction '''
 
-import __init__
+import sys
+sys.path.append('../data')
+
+#import __init__
 from irisdata import *
 
 class knn():#'''KNN classificator'''
     def __init__(self) :
         self.data = []
-    def fit( self , data ) :
+    def fit( self , data ) :# '''train , data is samples to be trained'''
         self.data = data
     def testData(self) :
         print( self.data )
@@ -31,8 +34,7 @@ class knn():#'''KNN classificator'''
             if v  > max :
                 max = v
                 maxK = i
-        return maxK 
-         
+        return maxK          
 
 def predSome( data , knns , k  ) :
     res = []
