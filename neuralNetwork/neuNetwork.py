@@ -1,5 +1,6 @@
 #coding:utf-8
 import numpy as np
+import math
 
 DEBUG00 = False
 DEBUG01 = False
@@ -16,8 +17,26 @@ class relu( activation ) :
         xx = [ i if i > 0 else -i for i in x ]
         return xx 
 
+class coster() :
+    def cost( self , y_ , y ) :
+        print( 'nothing' ) 
+class quadraticCoster( coster ) :
+    def cost( self , y_ , y ) :
+        ee = 0.
+        for comp1 , comp2 in zip ( y_ , y ) :
+            ee +=  (comp1 - comp2)**2
+        return ee
+class cross_entropyCoster( coster ) :
+    def cost( self , y_ , y ) :
+        ee = 0.
+        for comp1 , comp2 in zip ( y_ , y ) :
+            e = comp1 * math.log(comp2) + (1-comp1)* math.log( 1- comp2 )
+            ee -=  e
+        return ee    
+    
+
 class neuNetworker() :
-    def __init__(self ,  inDim , n_a ) :
+    def __init__(self ,  inDim , n_a , coste ) :
         '''inDim =>Dimension of input
            n_a =>list of tuple ( nodes , activation ) of each layer
         '''
@@ -25,6 +44,7 @@ class neuNetworker() :
         self.inDim = inDim
         self.n_a = n_a
         self.wba = []
+        self.coster = coste 
         lastDim = inDim
         lev = 1 
         for i in  n_a :
@@ -74,7 +94,17 @@ class neuNetworker() :
         for comp1 , comp2 in zip ( y_ , y ) :
             ee +=  (comp1 - comp2)**2
         return ee
-    
+
+    def costAvg( self , y_a , ya ) :
+        e = 0.0
+        for  y_  , y   in  zip( y_a , ya )  :
+            ee = self.coster.cost ( y_ , y )
+            e += ee ;
+            #yindex = yindex + 1
+        e  /=  len( y_a )
+        #print( 'len( y_a ) :' , len( y_a ) ) 
+        return e
+    '''  
     def squareErrorAvg( self , y_a , ya ) :
         e = 0.0
         for  y_  , y   in  zip( y_a , ya )  :
@@ -84,10 +114,11 @@ class neuNetworker() :
         e  /=  len( y_a )
         #print( 'len( y_a ) :' , len( y_a ) ) 
         return e
+    '''
 
     def learn(self , xa ,  y_a , learnRate ) :
         ya = self.forward( xa )
-        e1 = self.squareErrorAvg( y_a , ya )
+        e1 = self.costAvg( y_a , ya )
         wbaTemps =[]
         for i in range(len( self.wba)):
             wba = self.wba[i] 
@@ -98,7 +129,7 @@ class neuNetworker() :
                     v = self.wba[i][0][r][c] 
                     self.wba[i][0][r][c] += self.indepDelta
                     ya = self.forward( xa  )
-                    e2 = self.squareErrorAvg( y_a , ya )
+                    e2 = self.costAvg( y_a , ya )
                     learnN = (e2-e1)/self.indepDelta * learnRate # (e2-e1)/self.indepDelta :loss函數的微分 
                     self.wba[i][0][r][c] =  v
                     wTemp[r][c] = 10.0
@@ -109,7 +140,7 @@ class neuNetworker() :
                 v = self.wba[i][1][r] 
                 self.wba[i][1][r] += self.indepDelta
                 ya = self.forward( xa  )
-                e2 = self.squareErrorAvg( y_a , ya )
+                e2 = self.costAvg( y_a , ya )
                 learnN = (e2-e1)/self.indepDelta * learnRate # (e2-e1)/self.indepDelta :loss函數的微分 
                 self.wba[i][1][r] =  v
                 bTemp[r]  =  v- learnN
@@ -119,12 +150,12 @@ class neuNetworker() :
         self.wba = wbaTemps
         #compute new error to return:
         ya = self.forward( xa )
-        e = self.squareErrorAvg( y_a , ya )
+        e = self.costAvg( y_a , ya )
         return e 
 
 ''' Main for  Leaned by myself '''
 BATCH_SIZE = 4
-TRAIN_STEPS = 50000
+TRAIN_STEPS = 100000
 def directLearnMain() :
     xa = np.array( [[1,0,0,1],[0,1,0,0] , [0,1,0,1], [0,1,1,1]  ])
     y_a = np.array( [[1.,0.,0.],[0.,1.,0.] , [0.,0.,1.], [0.,1.0,0.]  ])
@@ -133,7 +164,9 @@ def directLearnMain() :
     act1 = signoid()
     #act1 = relu()
     wba=[[4,act1] , [3,act1] ]
-    nn = neuNetworker( 4 , wba )
+    coste = quadraticCoster() 
+    coste = cross_entropyCoster() 
+    nn = neuNetworker( 4 , wba , coste )
     ya = nn.forward(xa)
     if DEBUG01:
         print( 'ya type:' , type(ya) , 'ya[0] type' , type( ya[0] ) )
