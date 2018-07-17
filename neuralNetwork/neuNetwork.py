@@ -39,6 +39,7 @@ class neuNetworker() :
     def __init__(self ,  inDim , n_a , coste ) :
         '''inDim =>Dimension of input
            n_a =>list of tuple ( nodes , activation ) of each layer
+           coste=> cost(computing cost/loss) instance of class inherted from coster 
         '''
         self.indepDelta = 0.0001
         self.inDim = inDim
@@ -65,7 +66,72 @@ class neuNetworker() :
             a = i[1]
             wba = [w,b,a]
             self.wba.append( wba )
-            lev += 1 
+            lev += 1
+    def storeModel( self ) :
+        with open('model.txt' , 'wt' ) as fw :
+            st = 'layers:%d coster:%s\n'%( len( self.wba ) ,type( self.coster ) )            
+            fw.write( st  )
+            i = 0 
+            for wba in  self.wba  :
+                st = '  %d activation:\n  %s\n'%( i, type( wba[2] ))
+                i += 1 
+                fw.write( st )
+            
+            for i in range( len( self.wba ) ) :
+                st = ' layer:%d\n'%i
+                fw.write( st )
+                wba = self.wba[i]
+                w = wba[0]
+                st = ' w:\n'
+                fw.write( st )
+                for j in range(w.shape[0]) :
+                    st = '   '
+                    for k in range(w.shape[1]) :
+                        st += str(w[j][k] ) + ' '
+                    st += '\n'
+                    fw.write( st )
+                b = wba[1] 
+                st = ' b:\n   '
+                for k in range(b.shape[0]) : 
+                    st += str(b[k] ) + ' '
+                st += '\n'
+                fw.write( st )
+    def restoreModel( self ) :
+        with open('model.txt' , 'rt' ) as fr :
+            st = 'layers:%d coster:%s\n'%( len( self.wba ) ,type( self.coster ) )            
+            st1 = fr.read()
+            print( 'st1' , st1 ) 
+            if st != st1 :
+                print ( 'no restore' )
+                return 
+            i = 0 
+            for wba in  self.wba  :
+                st = '  %d activation:\n  %s\n'%( i, type( wba[2] ))
+                i += 1 
+                st1 = fr.read()
+                if st != st1 :
+                    print ( 'no restore' )
+                    return             
+            for i in range( len( self.wba ) ) :
+                st = ' layer:%d\n'%i
+                fw.write( st )
+                wba = self.wba[i]
+                w = wba[0]
+                st = ' w:\n'
+                fw.write( st )
+                for j in range(w.shape[0]) :
+                    st = '   '
+                    for k in range(w.shape[1]) :
+                        st += str(w[j][k] ) + ' '
+                    st += '\n'
+                    fw.write( st )
+                b = wba[1] 
+                st = ' b:\n   '
+                for k in range(b.shape[0]) : 
+                    st += str(b[k] ) + ' '
+                st += '\n'
+                fw.write( st )
+                
     def dumpWeightBias( self ) :
         i = 1 
         for wba in self.wba :
@@ -74,47 +140,31 @@ class neuNetworker() :
             print( 'layer ' ,  i , ':\n' ,'weight:\n' , w )
             print( 'bias:\n' , b )
             i = i + 1           
+    def forwardOne(self , x ) :
+        xx = x 
+        for wba in self.wba :
+            xx = np.dot( xx , wba[0])
+            xx +=  wba[1]
+            #if DEBUG01 :
+                #print( 'y:' , xx ) 
+            xx = wba[2].act(xx)
+        return xx
         
     
     def forward(self , xa ) :
         ya = [] 
         for  x in xa :
-            xx = x 
-            for wba in self.wba :
-                xx = np.dot( xx , wba[0])
-                xx +=  wba[1]
-                #if DEBUG01 :
-                    #print( 'y:' , xx ) 
-                xx = wba[2].act(xx)
+            xx = self.forwardOne( x )  
             ya.append (xx)
         return ya
     
-    def squareErrorEach( self , y_ , y ) :
-        ee = 0.
-        for comp1 , comp2 in zip ( y_ , y ) :
-            ee +=  (comp1 - comp2)**2
-        return ee
-
     def costAvg( self , y_a , ya ) :
         e = 0.0
         for  y_  , y   in  zip( y_a , ya )  :
             ee = self.coster.cost ( y_ , y )
             e += ee ;
-            #yindex = yindex + 1
         e  /=  len( y_a )
-        #print( 'len( y_a ) :' , len( y_a ) ) 
         return e
-    '''  
-    def squareErrorAvg( self , y_a , ya ) :
-        e = 0.0
-        for  y_  , y   in  zip( y_a , ya )  :
-            ee = self.squareErrorEach( y_ , y )
-            e += ee ;
-            #yindex = yindex + 1
-        e  /=  len( y_a )
-        #print( 'len( y_a ) :' , len( y_a ) ) 
-        return e
-    '''
 
     def learn(self , xa ,  y_a , learnRate ) :
         ya = self.forward( xa )
@@ -146,12 +196,15 @@ class neuNetworker() :
                 bTemp[r]  =  v- learnN
             wbaTemp = [wTemp, bTemp , self.wba[i][2] ]
             wbaTemps.append( wbaTemp ) 
-        #print ( '1:' , self.wba[0][0] - wbaTemps[0][0] )
         self.wba = wbaTemps
         #compute new error to return:
         ya = self.forward( xa )
         e = self.costAvg( y_a , ya )
-        return e 
+        return e
+    def pred( self , x ) :
+        y = self.forwardOne( x )
+        return y ;  
+        
 
 ''' Main for  Leaned by myself '''
 BATCH_SIZE = 4
