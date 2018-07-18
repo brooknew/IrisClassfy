@@ -45,7 +45,8 @@ class neuNetworker() :
         self.inDim = inDim
         self.n_a = n_a
         self.wba = []
-        self.coster = coste 
+        self.coster = coste
+        self.traineds = 0 
         lastDim = inDim
         lev = 1 
         for i in  n_a :
@@ -67,9 +68,11 @@ class neuNetworker() :
             wba = [w,b,a]
             self.wba.append( wba )
             lev += 1
-    def storeModel( self ) :
+    def storeModel( self , traineds , ecost ) :
         with open('model.txt' , 'wt' ) as fw :
             st = 'layers:%d coster:%s\n'%( len( self.wba ) ,type( self.coster ) )            
+            fw.write( st  )
+            st=' %d : %f\n'%( self.traineds + traineds , ecost ) 
             fw.write( st  )
             i = 0 
             for wba in  self.wba  :
@@ -82,7 +85,7 @@ class neuNetworker() :
                 fw.write( st )
                 wba = self.wba[i]
                 w = wba[0]
-                st = ' w:\n'
+                st = ' w: %dx%d\n'%( w.shape[0] ,  w.shape[1] )
                 fw.write( st )
                 for j in range(w.shape[0]) :
                     st = '   '
@@ -91,7 +94,9 @@ class neuNetworker() :
                     st += '\n'
                     fw.write( st )
                 b = wba[1] 
-                st = ' b:\n   '
+                st = ' b: %dx1\n'%( b.shape[0] )
+                fw.write( st )
+                st = '   '
                 for k in range(b.shape[0]) : 
                     st += str(b[k] ) + ' '
                 st += '\n'
@@ -99,39 +104,66 @@ class neuNetworker() :
     def restoreModel( self ) :
         with open('model.txt' , 'rt' ) as fr :
             st = 'layers:%d coster:%s\n'%( len( self.wba ) ,type( self.coster ) )            
-            st1 = fr.read()
-            print( 'st1' , st1 ) 
+            le = len( st ) 
+            st1 = fr.read(le)
+            #print( 'st1' , st1 ) 
             if st != st1 :
                 print ( 'no restore' )
-                return 
+                return
+            st1 = fr.readline()
+            st11 = st1.split()
+            if  len( st11 ) <= 0 :
+                print ( 'no restore' )
+                return                
+            if st11[0] :
+                self.traineds = int( st11[0] )
+            print( 'self.traineds:' , self.traineds ) 
             i = 0 
             for wba in  self.wba  :
                 st = '  %d activation:\n  %s\n'%( i, type( wba[2] ))
-                i += 1 
-                st1 = fr.read()
+                i += 1
+                le = len( st ) 
+                st1 = fr.read(le)
                 if st != st1 :
                     print ( 'no restore' )
                     return             
             for i in range( len( self.wba ) ) :
                 st = ' layer:%d\n'%i
-                fw.write( st )
+                le = len( st ) 
+                st1 = fr.read(le)
+                if st != st1 :
+                    print ( 'no restore' )
+                    return             
                 wba = self.wba[i]
                 w = wba[0]
-                st = ' w:\n'
-                fw.write( st )
+                st = ' w: %dx%d\n'%( w.shape[0] ,  w.shape[1] )
+                le = len( st ) 
+                st1 = fr.read(le)
+                if st != st1 :
+                    print ( 'no restore' )
+                    return             
                 for j in range(w.shape[0]) :
-                    st = '   '
+                    st1 = fr.readline() 
+                    #print( 'st1:' , st1 )
+                    wcol = st1.split() 
                     for k in range(w.shape[1]) :
-                        st += str(w[j][k] ) + ' '
-                    st += '\n'
-                    fw.write( st )
+                        self.wba[i][0][j][k] = wcol[k]
+                #print( 'self.wba[i][0]',  self.wba[i][0] ) 
                 b = wba[1] 
-                st = ' b:\n   '
+                st = ' b: %dx1\n   '%( b.shape[0] )
+                le = len(st )
+                st1 = fr.read( le )
+                if st != st1 :
+                    print ( 'no restore' )
+                    return
+                st1 = fr.readline()
+                bcol = st1.split()
+                #print( 'bcol' , bcol ) 
                 for k in range(b.shape[0]) : 
-                    st += str(b[k] ) + ' '
-                st += '\n'
-                fw.write( st )
-                
+                    self.wba[i][1][k] = bcol[k]
+        print( 'after restore :' )   
+        self.dumpWeightBias() 
+         
     def dumpWeightBias( self ) :
         i = 1 
         for wba in self.wba :

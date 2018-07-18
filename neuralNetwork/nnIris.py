@@ -6,8 +6,10 @@ sys.path.append('../data' )
 import numpy as np
 import irisdata
 import neuNetwork
+import matplotlib.pyplot as plt
 
-BATCH_SIZE = 8
+
+BATCH_SIZE = 16
 TRAIN_STEPS = 1000
 
 class nnIrisClassify():
@@ -16,6 +18,8 @@ class nnIrisClassify():
         #coste = neuNetwork.quadraticCoster() 
         coste = neuNetwork.cross_entropyCoster() 
         self.nn = neuNetwork.neuNetworker( 4 , node_acts , coste  )
+        self.nn.restoreModel()
+        
     def fit(self) :
         dataGr0 = irisdata.getDataFromDatafile( 0 ,112 )
         dataGr = irisdata.normalizeData( dataGr0 )
@@ -25,15 +29,21 @@ class nnIrisClassify():
         for one in dataGr :
             y_a.append ( hot [one[4] ] )  
         Groups = len(xa)
+        costt = [] 
         for step in range( TRAIN_STEPS ) :
             ind = (step % Groups)//BATCH_SIZE*BATCH_SIZE
-            e = self.nn.learn( xa[ind:ind+8] ,  y_a[ind:ind+8] ,0.05 )
+            e = self.nn.learn( xa[ind:ind+BATCH_SIZE] ,  y_a[ind:ind+BATCH_SIZE] ,0.000005 )
             if step % 500 == 0 :
                 print( 'step ', step , ': ' , e )
+            if step % 500 == 0 :   
+                self.storeModel( step , e )
+            costt.append( e )
+        plt.plot( costt )
+        plt.show() 
         self.nn.dumpWeightBias()
     def pred( self , x ) :
         y = self.nn.pred( x )
-        print( 'pred y :' , y )
+        #print( 'pred y :' , y )
         max = -100. ;
         maxIndex = -1 ;
         for i in range( len(y) ) :
@@ -64,16 +74,16 @@ class nnIrisClassify():
         print( 'pred right ' , t , ' of  38 ' , t/38*100 , '%' )
         #print( 'y_ya' , y_ya ) 
 
-    def storeModel(self ) :
-        self.nn.storeModel()
-        self.nn.restoreModel()
+    def storeModel(self , traineds , ecost ) :
+        self.nn.storeModel( traineds ,  ecost )
         
 
 
 def nnIrisMain() :
     nnItisC = nnIrisClassify()
+    
     nnItisC.fit()
-    nnItisC.storeModel()
+    
     nnItisC.test()
 
 nnIrisMain()
